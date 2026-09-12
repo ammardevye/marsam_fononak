@@ -1,1 +1,26 @@
-Nothing should be ignored based on the provided file changes, as they only include source code files (.tsx) without any build artifacts, dependencies, or temporary files.
+```
+# Next.js build output
+.next/
+
+# Environment variables
+.env.local
+.env.*
+
+# Dependencies
+node_modules/
+
+# IDE files
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.swp
+
+# OS generated files
+.DS_Store
+Thumbs.db
+```

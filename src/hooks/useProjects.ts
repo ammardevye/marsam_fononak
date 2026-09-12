@@ -33,11 +33,16 @@ export function useProjects() {
     return projectService.delete(id);
   };
 
+  const resetToDemo = () => {
+    return projectService.resetToDemo();
+  };
+
   return {
     projects,
     isLoading,
     createProject,
     updateProject,
     deleteProject,
+    resetToDemo,
   };
 }

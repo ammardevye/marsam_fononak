@@ -11,13 +11,15 @@ import { useProjects } from "@/hooks/useProjects";
 import { demoUsers } from "@/data/demoData";
 import { Plus, Search, Filter, Grid, List, Pencil, Trash2 } from "lucide-react";
 import { ProjectFormDialog } from "@/components/features/projects/ProjectFormDialog";
+import { sortProjects } from "@/lib/localStore";
 import type { Project } from "@/types";
 
 export default function ProjectsPage() {
-  const { projects, createProject, updateProject, deleteProject } = useProjects();
+  const { projects, createProject, updateProject, deleteProject, resetToDemo } = useProjects();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<"name" | "dueDate" | "lastUpdated" | "priority">("lastUpdated");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
@@ -41,23 +43,11 @@ export default function ProjectsPage() {
       result = result.filter((p) => p.status === statusFilter);
     }
 
-    // Sort
-    result.sort((a, b) => {
-      if (sortBy === "name") {
-        return a.name.localeCompare(b.name);
-      } else if (sortBy === "dueDate") {
-        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
-      } else if (sortBy === "lastUpdated") {
-        return new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime();
-      } else if (sortBy === "priority") {
-        const priorityOrder = { high: 3, medium: 2, low: 1 };
-        return priorityOrder[b.priority] - priorityOrder[a.priority];
-      }
-      return 0;
-    });
+    // Sort using shared utility
+    result = sortProjects(result, sortBy, sortOrder);
 
     return result;
-  }, [projects, searchQuery, statusFilter, sortBy]);
+  }, [projects, searchQuery, statusFilter, sortBy, sortOrder]);
 
   const handleCreateProject = (project: Omit<Project, "id" | "lastUpdated">) => {
     createProject(project);
@@ -101,14 +91,27 @@ export default function ProjectsPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
             <h1 className="text-2xl font-bold text-text">المشاريع</h1>
             <p className="text-sm text-text-muted">إدارة وتتبع جميع المشاريع</p>
           </div>
-          <Button onClick={() => setIsCreateDialogOpen(true)}>
-            <Plus className="ml-2 h-4 w-4 rotate-180" />مشروع جديد
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (confirm("هل أنت متأكد من إعادة تعيين البيانات التوضيحية؟ سيتم فقدان جميع التغييرات المحلية.")) {
+                  resetToDemo();
+                }
+              }}
+              className="text-xs"
+            >
+              إعادة تعيين البيانات
+            </Button>
+            <Button onClick={() => setIsCreateDialogOpen(true)}>
+              <Plus className="ml-2 h-4 w-4 rotate-180" />مشروع جديد
+            </Button>
+          </div>
         </div>
 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -126,6 +129,7 @@ export default function ProjectsPage() {
               value={statusFilter || ""}
               onChange={(e) => setStatusFilter(e.target.value || null)}
               className="rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              aria-label="تصفية حسب الحالة"
             >
               <option value="">جميع الحالات</option>
               <option value="planning">تخطيط</option>
@@ -137,16 +141,26 @@ export default function ProjectsPage() {
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
               className="rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              aria-label="ترتيب حسب"
             >
               <option value="lastUpdated">آخر تحديث</option>
               <option value="name">الاسم</option>
               <option value="dueDate">تاريخ التسليم</option>
               <option value="priority">الأولوية</option>
             </select>
-            <Button variant="outline" size="icon" onClick={() => setViewMode("grid")}>
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")}
+              className="rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              aria-label="اتجاه الترتيب"
+            >
+              <option value="desc">تنازلي</option>
+              <option value="asc">تصاعدي</option>
+            </select>
+            <Button variant="outline" size="icon" onClick={() => setViewMode("grid")} aria-label="عرض شبكي">
               <Grid className="h-4 w-4" />
             </Button>
-            <Button variant="outline" size="icon" onClick={() => setViewMode("list")}>
+            <Button variant="outline" size="icon" onClick={() => setViewMode("list")} aria-label="عرض قائمة">
               <List className="h-4 w-4" />
             </Button>
           </div>
