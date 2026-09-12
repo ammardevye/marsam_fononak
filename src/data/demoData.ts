@@ -98,11 +98,11 @@ export const demoProjects: Project[] = [
 export const demoTasks: Task[] = [
   { id: "t1", title: "تصميم واجهة المستخدم الرئيسية", description: "إنشاء تصاميم أولية لواجهة المستخدم", projectId: "p1", status: "completed", priority: "high", assigneeId: "u2", dueDate: "2025-02-05", progress: 100 },
   { id: "t2", title: "تطوير نظام المصادقة", description: "بناء نظام تسجيل الدخول والمصادقة", projectId: "p1", status: "in-progress", priority: "high", assigneeId: "u3", dueDate: "2025-02-15", progress: 70 },
-  { id: "t3", title: "اختبار الأداء", description: "إجراء اختبارات الأداء للنظام", projectId: "p1", status: "pending", priority: "medium", assigneeId: "u1", dueDate: "2025-02-20", progress: 0 },
+  { id: "t3", title: "اختبار الأداء", description: "إجراء اختبارات الأداء للنظام", projectId: "p1", status: "new", priority: "medium", assigneeId: "u1", dueDate: "2025-02-20", progress: 0 },
   { id: "t4", title: "كتابة التوثيق التقني", description: "توثيق الكود والواجهات البرمجية", projectId: "p2", status: "in-progress", priority: "low", assigneeId: "u4", dueDate: "2025-02-25", progress: 40 },
   { id: "t5", title: "مراجعة الأمان", description: "مراجعة شاملة لأمان النظام", projectId: "p2", status: "review", priority: "high", assigneeId: "u1", dueDate: "2025-02-18", progress: 80 },
   { id: "t6", title: "تحسين محركات البحث", description: "تحسين SEO للمنصة", projectId: "p3", status: "blocked", priority: "medium", assigneeId: "u5", dueDate: "2025-02-28", progress: 20 },
-  { id: "t7", title: "إعداد بيئة الإنتاج", description: "تهيئة خوادم الإنتاج", projectId: "p1", status: "pending", priority: "high", assigneeId: "u3", dueDate: "2025-03-01", progress: 0 },
+  { id: "t7", title: "إعداد بيئة الإنتاج", description: "تهيئة خوادم الإنتاج", projectId: "p1", status: "new", priority: "high", assigneeId: "u3", dueDate: "2025-03-01", progress: 0 },
   { id: "t8", title: "تدريب المستخدمين", description: "جلسات تدريب للمستخدمين النهائيين", projectId: "p4", status: "completed", priority: "medium", assigneeId: "u2", dueDate: "2025-01-25", progress: 100 },
 ];
 
