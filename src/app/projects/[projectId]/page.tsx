@@ -1,35 +1,89 @@
 "use client";
 
+import { useState, useMemo } from "react";
 import DashboardLayout from "@/layouts/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/common/Card";
 import { Badge } from "@/components/common/Badge";
 import { Avatar } from "@/components/common/Avatar";
 import { Button } from "@/components/common/Button";
-import { demoProjects, demoTasks, demoUsers, demoActivities } from "@/data/demoData";
+import { Input } from "@/components/forms/Input";
+import { useProjects } from "@/hooks/useProjects";
+import { useTasks } from "@/hooks/useTasks";
+import { demoUsers, demoActivities } from "@/data/demoData";
 import { ArrowLeft, Calendar, CheckCircle, Clock, Edit, FolderOpen, Archive, MoreHorizontal, Plus, Search, Filter, Users } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { TaskFormDialog } from "@/components/features/tasks/TaskFormDialog";
+import type { Task, Project } from "@/types";
 
 export default function ProjectDetailsPage() {
   const params = useParams();
   const projectId = params?.projectId as string | undefined;
   
-  const project = demoProjects.find(p => p.id === projectId);
-  const projectTasks = demoTasks.filter(t => t.projectId === projectId);
+  const { projects, updateProject } = useProjects();
+  const { tasks, createTask, updateTask, deleteTask } = useTasks();
+  
+  const project = projects.find(p => p.id === projectId);
+  const projectTasks = tasks.filter(t => t.projectId === projectId);
   const owner = project?.ownerId ? demoUsers.find(u => u.id === project.ownerId) : null;
   const members = project?.memberIds.map(id => demoUsers.find(u => u.id === id)).filter(Boolean) as typeof demoUsers;
   
-  // Task statistics for this project
-  const taskStats = {
+  const [isCreateTaskDialogOpen, setIsCreateTaskDialogOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  
+  // Task statistics for this project - calculated from current data
+  const taskStats = useMemo(() => ({
     total: projectTasks.length,
     completed: projectTasks.filter(t => t.status === "completed").length,
     inProgress: projectTasks.filter(t => t.status === "in-progress" || t.status === "review").length,
     new: projectTasks.filter(t => t.status === "new").length,
     blocked: projectTasks.filter(t => t.status === "blocked" || t.status === "cancelled").length,
+  }), [projectTasks]);
+  
+  // Filter tasks based on search and status
+  const filteredProjectTasks = useMemo(() => {
+    let result = [...projectTasks];
+    
+    if (searchQuery.trim()) {
+      const lowerQuery = searchQuery.toLowerCase();
+      result = result.filter(
+        (t) =>
+          t.title.toLowerCase().includes(lowerQuery) ||
+          t.description.toLowerCase().includes(lowerQuery)
+      );
+    }
+    
+    if (statusFilter) {
+      result = result.filter((t) => t.status === statusFilter);
+    }
+    
+    return result;
+  }, [projectTasks, searchQuery, statusFilter]);
+  
+  // Recent activity (demo - static for now)
+  const recentActivity = demoActivities.slice(0, 5);
+  
+  const handleCreateTask = (task: Omit<Task, "id">) => {
+    createTask(task);
+    setIsCreateTaskDialogOpen(false);
   };
   
-  // Recent activity (demo - filtered by project name)
-  const recentActivity = demoActivities.slice(0, 5);
+  const handleUpdateTask = (updates: Partial<Task>) => {
+    if (editingTask) {
+      updateTask(editingTask.id, updates);
+      setEditingTask(null);
+    }
+  };
+  
+  const handleDeleteTask = () => {
+    if (deletingTaskId) {
+      deleteTask(deletingTaskId);
+      setDeletingTaskId(null);
+    }
+  };
   
   if (!project) {
     return (
@@ -209,23 +263,43 @@ export default function ProjectDetailsPage() {
             <CardTitle>مهام المشروع</CardTitle>
             <div className="flex items-center gap-2">
               <div className="relative w-48">
-                <input
+                <Input
                   type="search"
                   placeholder="بحث عن مهمة..."
-                  className="w-full h-9 pr-9 pl-3 rounded-md border border-border bg-surface text-text text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pr-9"
                 />
                 <Search className="absolute right-3 top-2.5 h-4 w-4 text-text-muted" />
               </div>
-              <Button variant="outline" size="sm"><Filter className="h-4 w-4" /></Button>
-              <Button size="sm"><Plus className="ml-2 h-4 w-4 rotate-180" />مهمة</Button>
+              <select
+                value={statusFilter || ""}
+                onChange={(e) => setStatusFilter(e.target.value || null)}
+                className="rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="">جميع الحالات</option>
+                <option value="new">جديد</option>
+                <option value="in-progress">قيد التنفيذ</option>
+                <option value="review">مراجعة</option>
+                <option value="blocked">محظور</option>
+                <option value="completed">مكتمل</option>
+                <option value="cancelled">ملغى</option>
+              </select>
+              <Button size="sm" onClick={() => setIsCreateTaskDialogOpen(true)}>
+                <Plus className="ml-2 h-4 w-4 rotate-180" />مهمة
+              </Button>
             </div>
           </CardHeader>
           <CardContent>
-            {projectTasks.length === 0 ? (
-              <div className="py-8 text-center text-text-muted">لا توجد مهام في هذا المشروع بعد</div>
+            {filteredProjectTasks.length === 0 ? (
+              <div className="py-8 text-center text-text-muted">
+                {projectTasks.length === 0 
+                  ? "لا توجد مهام في هذا المشروع بعد" 
+                  : "لا توجد مهام مطابقة للبحث"}
+              </div>
             ) : (
               <div className="space-y-2">
-                {projectTasks.map((task) => {
+                {filteredProjectTasks.map((task) => {
                   const assignee = task.assigneeId ? demoUsers.find(u => u.id === task.assigneeId) : null;
                   return (
                     <div key={task.id} className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-surface-secondary transition-colors">
@@ -245,7 +319,24 @@ export default function ProjectDetailsPage() {
                         </Badge>
                         <span className="text-sm text-text-muted">{task.dueDate}</span>
                         {assignee && <Avatar fallback={assignee.name.charAt(0)} size="sm" />}
-                        <Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => setEditingTask(task)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-error"
+                            onClick={() => setDeletingTaskId(task.id)}
+                          >
+                            <Archive className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   );
@@ -296,6 +387,44 @@ export default function ProjectDetailsPage() {
             <p>ميزات إضافية قادمة في مراحل لاحقة</p>
           </div>
         </div>
+        
+        {/* Task Create/Edit Dialog */}
+        <TaskFormDialog
+          open={isCreateTaskDialogOpen}
+          onOpenChange={setIsCreateTaskDialogOpen}
+          onSubmit={handleCreateTask}
+          mode="create"
+          projects={projects.map((p) => ({ id: p.id, name: p.name }))}
+        />
+        
+        <TaskFormDialog
+          open={!!editingTask}
+          onOpenChange={(open) => !open && setEditingTask(null)}
+          onSubmit={handleUpdateTask}
+          initialData={editingTask || undefined}
+          mode="edit"
+          projects={projects.map((p) => ({ id: p.id, name: p.name }))}
+        />
+        
+        {/* Delete Confirmation Dialog */}
+        {deletingTaskId && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div className="w-full max-w-md rounded-lg bg-background p-6 shadow-lg">
+              <h3 className="text-lg font-semibold text-text mb-2">تأكيد الحذف</h3>
+              <p className="text-text-muted mb-6">
+                هل أنت متأكد من حذف هذه المهمة؟ هذه العملية محلية فقط في وضع العرض التوضيحي.
+              </p>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setDeletingTaskId(null)}>
+                  إلغاء
+                </Button>
+                <Button variant="danger" onClick={handleDeleteTask}>
+                  حذف
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );
