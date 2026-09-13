@@ -12,6 +12,7 @@ import { useProjects } from "@/hooks/useProjects";
 import { demoUsers } from "@/data/demoData";
 import { Plus, Search, Pencil, Trash2 } from "lucide-react";
 import { TaskFormDialog } from "@/components/features/tasks/TaskFormDialog";
+import { sortTasks } from "@/lib/localStore";
 import type { Task } from "@/types";
 
 export default function TasksPage() {
@@ -21,6 +22,8 @@ export default function TasksPage() {
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [priorityFilter, setPriorityFilter] = useState<string | null>(null);
   const [projectFilter, setProjectFilter] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<"title" | "dueDate" | "priority" | "status">("dueDate");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
@@ -49,8 +52,11 @@ export default function TasksPage() {
       result = result.filter((t) => t.projectId === projectFilter);
     }
 
+    // Apply sorting after filtering
+    result = sortTasks(result, sortBy, sortOrder);
+
     return result;
-  }, [tasks, searchQuery, statusFilter, priorityFilter, projectFilter]);
+  }, [tasks, searchQuery, statusFilter, priorityFilter, projectFilter, sortBy, sortOrder]);
 
   const handleCreateTask = (task: Omit<Task, "id">) => {
     createTask(task);
@@ -132,6 +138,7 @@ export default function TasksPage() {
               value={statusFilter || ""}
               onChange={(e) => setStatusFilter(e.target.value || null)}
               className="rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              aria-label="تصفية حسب الحالة"
             >
               <option value="">جميع الحالات</option>
               <option value="new">جديد</option>
@@ -145,6 +152,7 @@ export default function TasksPage() {
               value={priorityFilter || ""}
               onChange={(e) => setPriorityFilter(e.target.value || null)}
               className="rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              aria-label="تصفية حسب الأولوية"
             >
               <option value="">جميع الأولويات</option>
               <option value="high">عالية</option>
@@ -155,6 +163,7 @@ export default function TasksPage() {
               value={projectFilter || ""}
               onChange={(e) => setProjectFilter(e.target.value || null)}
               className="rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              aria-label="تصفية حسب المشروع"
             >
               <option value="">جميع المشاريع</option>
               {projects.map((project) => (
@@ -162,6 +171,26 @@ export default function TasksPage() {
                   {project.name}
                 </option>
               ))}
+            </select>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as "title" | "dueDate" | "priority" | "status")}
+              className="rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              aria-label="ترتيب حسب"
+            >
+              <option value="dueDate">تاريخ الاستحقاق</option>
+              <option value="title">العنوان</option>
+              <option value="priority">الأولوية</option>
+              <option value="status">الحالة</option>
+            </select>
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")}
+              className="rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              aria-label="اتجاه الترتيب"
+            >
+              <option value="desc">تنازلي</option>
+              <option value="asc">تصاعدي</option>
             </select>
           </div>
         </div>
