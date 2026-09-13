@@ -3887,12 +3887,16 @@ function useProjects() {
     const deleteProject = (id)=>{
         return __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$localStore$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["projectService"].delete(id);
     };
+    const resetToDemo = ()=>{
+        return __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$localStore$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["projectService"].resetToDemo();
+    };
     return {
         projects,
         isLoading,
         createProject,
         updateProject,
-        deleteProject
+        deleteProject,
+        resetToDemo
     };
 }
 _s(useProjects, "j1+C9JKBe7hOV9v2VWkyx3nb+uc=");
